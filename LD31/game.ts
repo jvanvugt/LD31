@@ -47,22 +47,16 @@ class Game {
 
     update() {
 
-        if (Math.floor(Math.random() * 30) == 20) {
-            var crack = this.crackSprites[Math.floor(Math.random() * this.crackSprites.length)].clone();
-            var xPos = this.randomRange(-30, 80);
-            this.cracksXPos.push(xPos);
-            crack.position.set(xPos, this.randomRange(-30, 30), 223);
-            crack.rotateZ(Math.random() * Math.PI * 2);
-            this.scene.add(crack);
-            this.cracks.push(crack);
-        }
-
         if (68 in this.input.keysDown && this.camera.position.x < 160) { // D
             this.camera.position.x += 5;
         }
 
         if (65 in this.input.keysDown && this.camera.position.x > -180) { // A
             this.camera.position.x -= 5;
+        }
+
+        if (32 in this.input.keysDown) {
+            this.addCrack();
         }
 
         this.trees.forEach((tree: THREE.Mesh) => {
@@ -88,6 +82,16 @@ class Game {
         for (var i = 0; i < this.cracks.length; i++) {
             this.cracks[i].position.x = this.camera.position.x + this.cracksXPos[i];
         }
+    }
+
+    addCrack() {
+        var crack = this.crackSprites[Math.floor(Math.random() * this.crackSprites.length)].clone();
+        var xPos = this.randomRange(-30, 80);
+        this.cracksXPos.push(xPos);
+        crack.position.set(xPos, this.randomRange(-30, 30), 223);
+        crack.rotateZ(Math.random() * Math.PI * 2);
+        this.scene.add(crack);
+        this.cracks.push(crack);
     }
 
     randomRange(min: number, max: number): number {

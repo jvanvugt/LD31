@@ -47,22 +47,16 @@ var Game = (function () {
 
     Game.prototype.update = function () {
         var _this = this;
-        if (Math.floor(Math.random() * 30) == 20) {
-            var crack = this.crackSprites[Math.floor(Math.random() * this.crackSprites.length)].clone();
-            var xPos = this.randomRange(-30, 80);
-            this.cracksXPos.push(xPos);
-            crack.position.set(xPos, this.randomRange(-30, 30), 223);
-            crack.rotateZ(Math.random() * Math.PI * 2);
-            this.scene.add(crack);
-            this.cracks.push(crack);
-        }
-
         if (68 in this.input.keysDown && this.camera.position.x < 160) {
             this.camera.position.x += 5;
         }
 
         if (65 in this.input.keysDown && this.camera.position.x > -180) {
             this.camera.position.x -= 5;
+        }
+
+        if (32 in this.input.keysDown) {
+            this.addCrack();
         }
 
         this.trees.forEach(function (tree) {
@@ -86,6 +80,16 @@ var Game = (function () {
         for (var i = 0; i < this.cracks.length; i++) {
             this.cracks[i].position.x = this.camera.position.x + this.cracksXPos[i];
         }
+    };
+
+    Game.prototype.addCrack = function () {
+        var crack = this.crackSprites[Math.floor(Math.random() * this.crackSprites.length)].clone();
+        var xPos = this.randomRange(-30, 80);
+        this.cracksXPos.push(xPos);
+        crack.position.set(xPos, this.randomRange(-30, 30), 223);
+        crack.rotateZ(Math.random() * Math.PI * 2);
+        this.scene.add(crack);
+        this.cracks.push(crack);
     };
 
     Game.prototype.randomRange = function (min, max) {
