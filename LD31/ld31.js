@@ -34,6 +34,12 @@ var Game = (function () {
         this.camera.position.z = 300;
         this.createScene();
         content.appendChild(this.renderer.domElement);
+        this.crackSprites = [];
+        this.crackSprites.push(this.loadPlane(32, 32, "crack2.png"));
+        this.crackSprites.push(this.loadPlane(32, 32, "crack3.png"));
+        this.crackSprites.push(this.loadPlane(32, 32, "crack4.png"));
+        this.cracks = [];
+        this.cracksXPos = [];
     }
     Game.prototype.start = function () {
         this.tick();
@@ -41,11 +47,21 @@ var Game = (function () {
 
     Game.prototype.update = function () {
         var _this = this;
-        if (68 in this.input.keysDown && this.camera.position.x < 150) {
+        if (Math.floor(Math.random() * 30) == 20) {
+            var crack = this.crackSprites[Math.floor(Math.random() * this.crackSprites.length)].clone();
+            var xPos = this.randomRange(-30, 80);
+            this.cracksXPos.push(xPos);
+            crack.position.set(xPos, this.randomRange(-30, 30), 223);
+            crack.rotateZ(Math.random() * Math.PI * 2);
+            this.scene.add(crack);
+            this.cracks.push(crack);
+        }
+
+        if (68 in this.input.keysDown && this.camera.position.x < 160) {
             this.camera.position.x += 5;
         }
 
-        if (65 in this.input.keysDown && this.camera.position.x > -150) {
+        if (65 in this.input.keysDown && this.camera.position.x > -180) {
             this.camera.position.x -= 5;
         }
 
@@ -65,6 +81,15 @@ var Game = (function () {
             }
         });
         this.skyLine.position.x = this.camera.position.x;
+        this.carInterior.position.x = this.camera.position.x;
+        this.windscreen.position.x = this.camera.position.x;
+        for (var i = 0; i < this.cracks.length; i++) {
+            this.cracks[i].position.x = this.camera.position.x + this.cracksXPos[i];
+        }
+    };
+
+    Game.prototype.randomRange = function (min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
     };
 
     Game.prototype.render = function () {
@@ -74,8 +99,16 @@ var Game = (function () {
     Game.prototype.createScene = function () {
         var _this = this;
         this.scene = new THREE.Scene();
-        this.scene.fog = new THREE.Fog(0xcccccc, 0.1, 5000);
+        this.scene.fog = new THREE.Fog(0xcccccc, 0.1, 3000);
         this.scene.add(this.camera);
+
+        this.carInterior = this.loadPlane(160, 90, "interior.png");
+        this.carInterior.translateZ(224);
+        this.scene.add(this.carInterior);
+
+        this.windscreen = this.loadPlane(160, 90, "windscreen.png");
+        this.windscreen.translateZ(222);
+        this.scene.add(this.windscreen);
 
         this.road = this.loadPlane(100, 100, "road.png");
         this.road.translateY(-100);
@@ -96,7 +129,7 @@ var Game = (function () {
             this.trees.push(newTree);
         }
 
-        this.skyLine = this.loadPlane(400, 100, "skyline.png");
+        this.skyLine = this.loadPlane(100, 100, "skyline.png");
         this.skyLine.material.setValues({ fog: false });
         this.skyLine.translateZ(-6000);
         this.skyLine.scale.x = 140;
@@ -110,7 +143,7 @@ var Game = (function () {
         this.foliage = [];
         for (var i = 0; i < 80; i++) {
             var newGrass = grass.clone();
-            var xOffset = Math.floor(Math.random() * (1600 - 400 + 1)) + 400;
+            var xOffset = this.randomRange(400, 1600);
             newGrass.translateX(xOffset * ((Math.random() > 0.5) ? 1 : -1));
             newGrass.translateZ(Math.floor(Math.random() * 3000));
             this.foliage.push(newGrass);
@@ -138,7 +171,7 @@ var Game = (function () {
         var texture = THREE.ImageUtils.loadTexture(textureURL);
         texture.magFilter = THREE.NearestFilter;
         texture.minFilter = THREE.NearestFilter;
-        return new THREE.Mesh(new THREE.PlaneGeometry(100, 100), new THREE.MeshBasicMaterial({ map: texture, transparent: true }));
+        return new THREE.Mesh(new THREE.PlaneGeometry(width, height), new THREE.MeshBasicMaterial({ map: texture, transparent: true }));
     };
     return Game;
 })();
