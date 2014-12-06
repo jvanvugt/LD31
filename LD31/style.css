@@ -1,0 +1,13 @@
+﻿body {
+    font-family: 'Segoe UI', sans-serif;
+    background-color: #eee;
+}
+
+#content {
+    width: 960px;
+    margin: 0 auto;
+}
+
+h1 {
+    text-align: center;
+}
