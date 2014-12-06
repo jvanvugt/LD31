@@ -25,6 +25,7 @@
   </ItemGroup>
   <ItemGroup>
     <TypeScriptCompile Include="game.ts" />
+    <TypeScriptCompile Include="input.ts" />
     <TypeScriptCompile Include="Scripts\typings\threejs\detector.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\threejs\three-canvasrenderer.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\threejs\three-copyshader.d.ts" />
