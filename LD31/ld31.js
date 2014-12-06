@@ -15,8 +15,21 @@ var Input = (function () {
     }
     return Input;
 })();
+var Utils = (function () {
+    function Utils() {
+    }
+    Utils.randomRange = function (min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    };
+
+    Utils.randomDir = function () {
+        return ((Math.random() > 0.5) ? 1 : -1);
+    };
+    return Utils;
+})();
 /// <reference path="scripts/typings/threejs/three.d.ts" />
 /// <reference path="input.ts" />
+/// <reference path="utils.ts" />
 var Game = (function () {
     function Game(content) {
         var _this = this;
@@ -34,12 +47,6 @@ var Game = (function () {
         this.camera.position.z = 300;
         this.createScene();
         content.appendChild(this.renderer.domElement);
-        this.crackSprites = [];
-        this.crackSprites.push(this.loadPlane(32, 32, "crack2.png"));
-        this.crackSprites.push(this.loadPlane(32, 32, "crack3.png"));
-        this.crackSprites.push(this.loadPlane(32, 32, "crack4.png"));
-        this.cracks = [];
-        this.cracksXPos = [];
     }
     Game.prototype.start = function () {
         this.tick();
@@ -57,6 +64,10 @@ var Game = (function () {
 
         if (32 in this.input.keysDown) {
             this.addCrack();
+        }
+
+        if (16 in this.input.keysDown) {
+            this.shakeCamera();
         }
 
         this.trees.forEach(function (tree) {
@@ -84,16 +95,12 @@ var Game = (function () {
 
     Game.prototype.addCrack = function () {
         var crack = this.crackSprites[Math.floor(Math.random() * this.crackSprites.length)].clone();
-        var xPos = this.randomRange(-30, 80);
+        var xPos = Utils.randomRange(-30, 80);
         this.cracksXPos.push(xPos);
-        crack.position.set(xPos, this.randomRange(-30, 30), 223);
+        crack.position.set(xPos, Utils.randomRange(-30, 30), 223);
         crack.rotateZ(Math.random() * Math.PI * 2);
         this.scene.add(crack);
         this.cracks.push(crack);
-    };
-
-    Game.prototype.randomRange = function (min, max) {
-        return Math.floor(Math.random() * (max - min + 1)) + min;
     };
 
     Game.prototype.render = function () {
@@ -145,10 +152,10 @@ var Game = (function () {
         grass.scale.y = 0.5;
         grass.translateZ(-1000);
         this.foliage = [];
-        for (var i = 0; i < 80; i++) {
+        for (var i = 0; i < 150; i++) {
             var newGrass = grass.clone();
-            var xOffset = this.randomRange(400, 1600);
-            newGrass.translateX(xOffset * ((Math.random() > 0.5) ? 1 : -1));
+            var xOffset = Utils.randomRange(400, 1600);
+            newGrass.translateX(xOffset * Utils.randomDir());
             newGrass.translateZ(Math.floor(Math.random() * 3000));
             this.foliage.push(newGrass);
         }
@@ -169,6 +176,13 @@ var Game = (function () {
             return _this.scene.add(tree);
         });
         this.scene.add(this.road);
+
+        this.crackSprites = [];
+        this.crackSprites.push(this.loadPlane(32, 32, "crack2.png"));
+        this.crackSprites.push(this.loadPlane(32, 32, "crack3.png"));
+        this.crackSprites.push(this.loadPlane(32, 32, "crack4.png"));
+        this.cracks = [];
+        this.cracksXPos = [];
     };
 
     Game.prototype.loadPlane = function (width, height, textureURL) {
@@ -183,4 +197,28 @@ var Game = (function () {
 window.onload = function () {
     new Game(document.getElementById('content')).start();
 };
+/// <reference path="game.ts" />
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
+var CarCamera = (function (_super) {
+    __extends(CarCamera, _super);
+    function CarCamera() {
+        _super.apply(this, arguments);
+        this.isShaking = false;
+    }
+    CarCamera.prototype.shake = function () {
+        if (!this.isShaking) {
+            this.oldPos = this.position;
+            this.isShaking = true;
+        }
+        this.translateX(Math.random() * 5);
+        this.translateY(Math.random() * 5);
+        this.translateZ(Math.random() * 5);
+    };
+    return CarCamera;
+})(THREE.PerspectiveCamera);
 //# sourceMappingURL=ld31.js.map

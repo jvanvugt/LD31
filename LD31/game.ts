@@ -1,5 +1,6 @@
 ﻿/// <reference path="scripts/typings/threejs/three.d.ts" />
 /// <reference path="input.ts" />
+/// <reference path="utils.ts" />
 
 class Game {
 
@@ -27,12 +28,6 @@ class Game {
         this.camera.position.z = 300;
         this.createScene();
         content.appendChild(this.renderer.domElement);
-        this.crackSprites = [];
-        this.crackSprites.push(this.loadPlane(32, 32, "crack2.png"));
-        this.crackSprites.push(this.loadPlane(32, 32, "crack3.png"));
-        this.crackSprites.push(this.loadPlane(32, 32, "crack4.png"));
-        this.cracks = [];
-        this.cracksXPos = [];
     }
 
     start(): void {
@@ -57,6 +52,10 @@ class Game {
 
         if (32 in this.input.keysDown) {
             this.addCrack();
+        }
+
+        if (16 in this.input.keysDown) {
+            this.shakeCamera();
         }
 
         this.trees.forEach((tree: THREE.Mesh) => {
@@ -86,16 +85,12 @@ class Game {
 
     addCrack() {
         var crack = this.crackSprites[Math.floor(Math.random() * this.crackSprites.length)].clone();
-        var xPos = this.randomRange(-30, 80);
+        var xPos = Utils.randomRange(-30, 80);
         this.cracksXPos.push(xPos);
-        crack.position.set(xPos, this.randomRange(-30, 30), 223);
+        crack.position.set(xPos, Utils.randomRange(-30, 30), 223);
         crack.rotateZ(Math.random() * Math.PI * 2);
         this.scene.add(crack);
         this.cracks.push(crack);
-    }
-
-    randomRange(min: number, max: number): number {
-        return Math.floor(Math.random() * (max - min + 1)) + min;
     }
 
     render() {
@@ -146,10 +141,10 @@ class Game {
         grass.scale.y = 0.5;
         grass.translateZ(-1000);
         this.foliage = [];
-        for (var i = 0; i < 80; i++) {
+        for (var i = 0; i < 150; i++) {
             var newGrass: THREE.Mesh = grass.clone();
-            var xOffset = this.randomRange(400, 1600);
-            newGrass.translateX(xOffset * ((Math.random() > 0.5) ? 1 : -1));
+            var xOffset = Utils.randomRange(400, 1600);
+            newGrass.translateX(xOffset * Utils.randomDir());
             newGrass.translateZ(Math.floor(Math.random() * 3000));
             this.foliage.push(newGrass);
         }
@@ -166,6 +161,14 @@ class Game {
         this.scene.add(this.skyLine);
         this.trees.forEach((tree: THREE.Mesh) => this.scene.add(tree));
         this.scene.add(this.road);
+
+        this.crackSprites = [];
+        this.crackSprites.push(this.loadPlane(32, 32, "crack2.png"));
+        this.crackSprites.push(this.loadPlane(32, 32, "crack3.png"));
+        this.crackSprites.push(this.loadPlane(32, 32, "crack4.png"));
+        this.cracks = [];
+        this.cracksXPos = [];
+
     }
 
     loadPlane(width: number, height: number, textureURL: string): THREE.Mesh {
