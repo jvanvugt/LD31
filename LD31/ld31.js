@@ -13,13 +13,14 @@ var Game = (function () {
         this.camera = new THREE.PerspectiveCamera(60, 16 / 9, 0.1, 10000);
         this.camera.position.z = 300;
         this.scene = new THREE.Scene();
+        this.scene.fog = new THREE.Fog(0xcccccc, 0.1, 5000);
         this.scene.add(this.camera);
 
         this.road = this.loadPlane(100, 100, "road.png");
         this.road.translateY(-150);
         this.road.translateZ(500);
         this.road.rotateX(-Math.PI / 2);
-        this.road.scale.x = 15;
+        this.road.scale.x = 120;
         this.road.scale.y = 1000;
 
         var tree = this.loadPlane(100, 100, "tree.png");
@@ -34,6 +35,13 @@ var Game = (function () {
             this.trees.push(newTree);
         }
 
+        var skyline = this.loadPlane(400, 100, "skyline.png");
+        skyline.translateZ(-6000);
+        skyline.scale.x = 140;
+        skyline.scale.y = 30;
+        skyline.translateY(30 * 100 / 2 - 300);
+
+        this.scene.add(skyline);
         this.trees.forEach(function (tree) {
             return _this.scene.add(tree);
         });
