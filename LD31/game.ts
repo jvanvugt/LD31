@@ -1,6 +1,8 @@
 ﻿/// <reference path="scripts/typings/threejs/three.d.ts" />
 /// <reference path="input.ts" />
 /// <reference path="utils.ts" />
+
+
 class Game {
 
     renderer: THREE.Renderer;
@@ -157,6 +159,8 @@ class Game {
         if (this.deerModel) {
             if (Utils.randomRange(0, 200) == 5) {
                 var newDeer = this.deerModel.clone();
+                if(Math.random() > 0.5)
+                    this.deerModel.rotateY(Math.PI);
                 newDeer.position.z = -5000;
                 newDeer.position.x = Utils.randomRange(-325, 275);
                 this.scene.add(newDeer);
@@ -164,7 +168,7 @@ class Game {
             }
         }
         this.deers.forEach((deer) => {
-            deer.translateZ(this.moveSpeed);
+            deer.translateZ(this.moveSpeed * ((deer.rotation.y == 0) ? 1 : -1));
             if (deer.position.z > this.carInterior.position.z) {
                 if ((deer.position.x - this.deerWidth < this.camera.position.x + this.deerWidth && deer.position.x - this.deerWidth > this.camera.position.x - this.deerWidth) ||
                     (deer.position.x + this.deerWidth < this.camera.position.x + this.deerWidth && deer.position.x + this.deerWidth > this.camera.position.x - this.deerWidth)) {

@@ -202,6 +202,8 @@ var Game = (function () {
         if (this.deerModel) {
             if (Utils.randomRange(0, 200) == 5) {
                 var newDeer = this.deerModel.clone();
+                if (Math.random() > 0.5)
+                    this.deerModel.rotateY(Math.PI);
                 newDeer.position.z = -5000;
                 newDeer.position.x = Utils.randomRange(-325, 275);
                 this.scene.add(newDeer);
@@ -209,7 +211,7 @@ var Game = (function () {
             }
         }
         this.deers.forEach(function (deer) {
-            deer.translateZ(_this.moveSpeed);
+            deer.translateZ(_this.moveSpeed * ((deer.rotation.y == 0) ? 1 : -1));
             if (deer.position.z > _this.carInterior.position.z) {
                 if ((deer.position.x - _this.deerWidth < _this.camera.position.x + _this.deerWidth && deer.position.x - _this.deerWidth > _this.camera.position.x - _this.deerWidth) || (deer.position.x + _this.deerWidth < _this.camera.position.x + _this.deerWidth && deer.position.x + _this.deerWidth > _this.camera.position.x - _this.deerWidth)) {
                     _this.deerHit++;
