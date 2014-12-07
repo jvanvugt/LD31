@@ -112,13 +112,9 @@ class Game {
 
     update() {
 
-        if (this.isShaking > 0) {
-            this.shakeCamera(3);
-        }
-        if (this.isShaking == 0) {
-            this.resetCamera();
-            this.isShaking = -1;
-        }
+
+
+        console.log(this.camera.position);
 
         if (68 in this.input.keysDown && this.camera.position.x < 160) { // D
             this.camera.position.x += 5;
@@ -158,7 +154,7 @@ class Game {
         }
 
         if (this.deerModel) {
-            if (Utils.randomRange(0, 300) == 200) {
+            if (Utils.randomRange(0, 250) == 5) {
                 var newDeer = this.deerModel.clone();
                 newDeer.position.z = -5000;
                 newDeer.position.x = Utils.randomRange(-325, 275);
@@ -169,13 +165,21 @@ class Game {
         this.deers.forEach((deer) => {
             deer.translateZ(this.moveSpeed);
             if (deer.position.z > this.camera.position.z) {
-                this.isShaking = 30;
+                if (this.isShaking > 0)
+                    this.isShaking = 14;
+                else this.isShaking = 15;
                 this.addCrack();
-                this.shakeCamera(3);
                 delete this.deers[this.deers.indexOf(deer)];
                 this.scene.remove(deer);
             }
         });
+
+        if (this.isShaking > 0) {
+            this.shakeCamera(2);
+        }
+        if (this.isShaking == 0) {
+            this.resetCamera();
+        }
     }
 
     addCrack() {
@@ -193,7 +197,6 @@ class Game {
     }
 
     createScene() {
-        //this.scene.fog = new THREE.Fog(0xcccccc, 0.1, 3000);
         this.scene.add(this.camera);
 
         this.windscreen = this.loadPlane(160, 90, "windscreen.png");
@@ -233,7 +236,7 @@ class Game {
     }
 
     shakeCamera(amount: number) {
-        if (this.isShaking == 30) {
+        if (this.isShaking == 15) {
             this.oldCamPos = this.camera.position.clone();
         }
         this.isShaking--;
@@ -243,7 +246,6 @@ class Game {
     }
 
     resetCamera() {
-        this.isShaking = 0;
         this.camera.position = this.oldCamPos;
     }
 }

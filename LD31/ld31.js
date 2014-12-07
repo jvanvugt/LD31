@@ -123,13 +123,7 @@ var Game = (function () {
 
     Game.prototype.update = function () {
         var _this = this;
-        if (this.isShaking > 0) {
-            this.shakeCamera(3);
-        }
-        if (this.isShaking == 0) {
-            this.resetCamera();
-            this.isShaking = -1;
-        }
+        console.log(this.camera.position);
 
         if (68 in this.input.keysDown && this.camera.position.x < 160) {
             this.camera.position.x += 5;
@@ -167,7 +161,7 @@ var Game = (function () {
         }
 
         if (this.deerModel) {
-            if (Utils.randomRange(0, 300) == 200) {
+            if (Utils.randomRange(0, 250) == 5) {
                 var newDeer = this.deerModel.clone();
                 newDeer.position.z = -5000;
                 newDeer.position.x = Utils.randomRange(-325, 275);
@@ -178,13 +172,22 @@ var Game = (function () {
         this.deers.forEach(function (deer) {
             deer.translateZ(_this.moveSpeed);
             if (deer.position.z > _this.camera.position.z) {
-                _this.isShaking = 30;
+                if (_this.isShaking > 0)
+                    _this.isShaking = 14;
+                else
+                    _this.isShaking = 15;
                 _this.addCrack();
-                _this.shakeCamera(3);
                 delete _this.deers[_this.deers.indexOf(deer)];
                 _this.scene.remove(deer);
             }
         });
+
+        if (this.isShaking > 0) {
+            this.shakeCamera(2);
+        }
+        if (this.isShaking == 0) {
+            this.resetCamera();
+        }
     };
 
     Game.prototype.addCrack = function () {
@@ -202,7 +205,6 @@ var Game = (function () {
     };
 
     Game.prototype.createScene = function () {
-        //this.scene.fog = new THREE.Fog(0xcccccc, 0.1, 3000);
         this.scene.add(this.camera);
 
         this.windscreen = this.loadPlane(160, 90, "windscreen.png");
@@ -241,7 +243,7 @@ var Game = (function () {
     };
 
     Game.prototype.shakeCamera = function (amount) {
-        if (this.isShaking == 30) {
+        if (this.isShaking == 15) {
             this.oldCamPos = this.camera.position.clone();
         }
         this.isShaking--;
@@ -251,7 +253,6 @@ var Game = (function () {
     };
 
     Game.prototype.resetCamera = function () {
-        this.isShaking = 0;
         this.camera.position = this.oldCamPos;
     };
     return Game;
