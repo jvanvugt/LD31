@@ -47,6 +47,7 @@ var Game = (function () {
         this.camera = new THREE.PerspectiveCamera(60, 16 / 9, 0.1, 10000);
         this.camera.position.z = 300;
         this.scene = new THREE.Scene;
+        this.deers = [];
 
         var light = new THREE.DirectionalLight(0xFDB813);
         light.position.z = 350;
@@ -75,6 +76,12 @@ var Game = (function () {
             _this.carInterior.rotateY(Math.PI);
             _this.carInterior.scale.set(12, 8, 4);
             _this.scene.add(_this.carInterior);
+        });
+
+        loader.load("Models/deer.json", function (geom, materials) {
+            _this.deerModel = new THREE.Mesh(geom, new THREE.MeshFaceMaterial(materials));
+            _this.deerModel.scale.set(80, 80, 80);
+            _this.deerModel.position.y = -125;
         });
 
         loader.load("Models/tree.json", function (geom, materials) {
@@ -158,6 +165,19 @@ var Game = (function () {
         for (var i = 0; i < this.cracks.length; i++) {
             this.cracks[i].position.x = this.camera.position.x + this.cracksXPos[i];
         }
+
+        if (this.deerModel) {
+            if (Math.random() < 0.01) {
+                var newDeer = this.deerModel.clone();
+                newDeer.position.z = -5000;
+                newDeer.position.x = Utils.randomRange(-325, 275);
+                this.scene.add(newDeer);
+                this.deers.push(newDeer);
+            }
+        }
+        this.deers.forEach(function (deer) {
+            deer.translateZ(_this.moveSpeed);
+        });
     };
 
     Game.prototype.addCrack = function () {

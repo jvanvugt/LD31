@@ -20,6 +20,8 @@ class Game {
     cracksXPos: number[];
     isShaking: boolean = false;
     oldCamPos: THREE.Vector3;
+    deerModel: THREE.Mesh;
+    deers: THREE.Mesh[];
 
     constructor(content: HTMLElement) {
         this.input = new Input();
@@ -28,6 +30,7 @@ class Game {
         this.camera = new THREE.PerspectiveCamera(60, 16 / 9, 0.1, 10000);
         this.camera.position.z = 300;
         this.scene = new THREE.Scene;
+        this.deers = [];
 
         var light = new THREE.DirectionalLight(0xFDB813);
         light.position.z = 350;
@@ -56,6 +59,12 @@ class Game {
             this.carInterior.rotateY(Math.PI);
             this.carInterior.scale.set(12, 8, 4);
             this.scene.add(this.carInterior);
+        });
+
+        loader.load("Models/deer.json", (geom, materials) => {
+            this.deerModel = new THREE.Mesh(geom, new THREE.MeshFaceMaterial(materials));
+            this.deerModel.scale.set(80, 80, 80);
+            this.deerModel.position.y = -125;
         });
 
         loader.load("Models/tree.json", (geom, materials) => {
@@ -147,6 +156,17 @@ class Game {
         for (var i = 0; i < this.cracks.length; i++) {
             this.cracks[i].position.x = this.camera.position.x + this.cracksXPos[i];
         }
+
+        if (this.deerModel) {
+            if (Math.random() < 0.01) {
+                var newDeer = this.deerModel.clone();
+                newDeer.position.z = -5000;
+                newDeer.position.x = Utils.randomRange(-325, 275);
+                this.scene.add(newDeer);
+                this.deers.push(newDeer);
+            }
+        }
+        this.deers.forEach((deer) => { deer.translateZ(this.moveSpeed);});
     }
 
     addCrack() {
