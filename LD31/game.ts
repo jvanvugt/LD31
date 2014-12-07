@@ -1,6 +1,7 @@
 ﻿/// <reference path="scripts/typings/threejs/three.d.ts" />
 /// <reference path="input.ts" />
 /// <reference path="utils.ts" />
+/// <reference path="colladaloader.d.ts" />
 
 class Game {
 
@@ -19,6 +20,8 @@ class Game {
     crackSprites: THREE.Mesh[];
     cracks: THREE.Mesh[];
     cracksXPos: number[];
+    isShaking: boolean = false;
+    oldCamPos: THREE.Vector3;
 
     constructor(content: HTMLElement) {
         this.input = new Input();
@@ -26,6 +29,25 @@ class Game {
         this.renderer.setSize(960, 600);
         this.camera = new THREE.PerspectiveCamera(60, 16 / 9, 0.1, 10000);
         this.camera.position.z = 300;
+        this.scene = new THREE.Scene;
+        var light = new THREE.PointLight(0xffffff);
+        this.trees = [];
+        light.position.z = 300;
+        this.scene.add(light);
+        var loader: THREE.JSONLoader = new THREE.JSONLoader(true);
+        loader.load("Models/tree.json", (geom, materials) => {
+            console.log(materials);
+            var mesh = new THREE.Mesh(geom, new THREE.MeshFaceMaterial(materials));
+            mesh.position.z = -1000;
+            mesh.scale.set(40, 40, 40);
+            for (var i = 0; i < 7 * 2; i++) {
+                var newTree: THREE.Mesh = mesh.clone();
+                newTree.translateX(350 * ((i % 2 == 0) ? -1 : 1));
+                newTree.translateZ(-Math.floor(i / 2) * this.treeOffset);
+                this.trees.push(newTree);
+                this.scene.add(newTree);
+            }
+        });
         this.createScene();
         content.appendChild(this.renderer.domElement);
     }
@@ -55,7 +77,11 @@ class Game {
         }
 
         if (16 in this.input.keysDown) {
-            this.shakeCamera();
+            this.shakeCamera(5);
+        }
+
+        if (!(16 in this.input.keysDown) && this.isShaking) {
+            this.resetCamera();
         }
 
         this.trees.forEach((tree: THREE.Mesh) => {
@@ -87,7 +113,7 @@ class Game {
         var crack = this.crackSprites[Math.floor(Math.random() * this.crackSprites.length)].clone();
         var xPos = Utils.randomRange(-30, 80);
         this.cracksXPos.push(xPos);
-        crack.position.set(xPos, Utils.randomRange(-30, 30), 223);
+        crack.position.set(xPos, Utils.randomRange(-30, 30), 254);
         crack.rotateZ(Math.random() * Math.PI * 2);
         this.scene.add(crack);
         this.cracks.push(crack);
@@ -98,16 +124,15 @@ class Game {
     }
 
     createScene() {
-        this.scene = new THREE.Scene();
-        this.scene.fog = new THREE.Fog(0xcccccc, 0.1, 3000);
+        //this.scene.fog = new THREE.Fog(0xcccccc, 0.1, 3000);
         this.scene.add(this.camera);
 
         this.carInterior = this.loadPlane(160, 90, "interior.png");
-        this.carInterior.translateZ(224);
+        this.carInterior.translateZ(255);
         this.scene.add(this.carInterior);
 
         this.windscreen = this.loadPlane(160, 90, "windscreen.png");
-        this.windscreen.translateZ(222);
+        this.windscreen.translateZ(253);
         this.scene.add(this.windscreen);
 
         this.road = this.loadPlane(100, 100, "road.png");
@@ -116,19 +141,6 @@ class Game {
         this.road.rotateX(-Math.PI / 2);
         this.road.scale.x = 120;
         this.road.scale.y = 1000;
-
-        var tree: THREE.Mesh = this.loadPlane(100, 200, "tree.png");
-        tree.translateY(-75);
-        tree.scale.y = 4;
-        tree.translateZ(-1000);
-        this.trees = [];
-        for (var i = 0; i < 5 * 2; i++) {
-            var newTree: THREE.Mesh = tree.clone();
-            newTree.translateX(350 * ((i % 2 == 0) ? -1 : 1));
-            newTree.translateZ(Math.floor(i / 2) * this.treeOffset);
-            this.trees.push(newTree);
-        }
-
         this.skyLine = this.loadPlane(100, 100, "skyline.png");
         this.skyLine.material.setValues({ fog: false });
         this.skyLine.translateZ(-6000);
@@ -137,7 +149,7 @@ class Game {
         this.skyLine.translateY(30 * 100 / 2 - 300);
 
         var grass: THREE.Mesh = this.loadPlane(100, 100, "foliage.png");
-        grass.translateY(-50);
+        grass.translateY(-75);
         grass.scale.y = 0.5;
         grass.translateZ(-1000);
         this.foliage = [];
@@ -159,7 +171,6 @@ class Game {
         this.scene.add(sky);
 
         this.scene.add(this.skyLine);
-        this.trees.forEach((tree: THREE.Mesh) => this.scene.add(tree));
         this.scene.add(this.road);
 
         this.crackSprites = [];
@@ -176,6 +187,24 @@ class Game {
         texture.magFilter = THREE.NearestFilter;
         texture.minFilter = THREE.NearestFilter;
         return new THREE.Mesh(new THREE.PlaneGeometry(width, height), new THREE.MeshBasicMaterial({ map: texture, transparent: true}));
+    }
+
+    shakeCamera(amount: number) {
+        if (!this.isShaking) {
+            this.oldCamPos = this.camera.position.clone();
+            this.isShaking = true;
+        }
+
+        this.camera.translateX(Math.random() * amount * Utils.randomDir());
+        this.camera.translateY(Math.random() * amount * Utils.randomDir());
+        this.camera.translateZ(Math.random() * amount * Utils.randomDir());
+    }
+
+    resetCamera() {
+        this.isShaking = false;
+        this.camera.position = this.oldCamPos;
+        console.log(this.camera.position);
+        console.log(this.oldCamPos);
     }
 }
 
