@@ -36,6 +36,7 @@ var Game = (function () {
         this.treeOffset = 1000;
         this.moveSpeed = 16;
         this.isShaking = -1;
+        this.deerWidth = 65;
         this.tick = function () {
             _this.update();
             _this.render();
@@ -154,7 +155,7 @@ var Game = (function () {
         });
         this.skyLine.position.x = this.camera.position.x;
         if (this.carInterior)
-            this.carInterior.position.x = this.camera.position.x;
+            this.carInterior.position.x = this.camera.position.x + 3;
         this.windscreen.position.x = this.camera.position.x;
         for (var i = 0; i < this.cracks.length; i++) {
             this.cracks[i].position.x = this.camera.position.x + this.cracksXPos[i];
@@ -172,11 +173,13 @@ var Game = (function () {
         this.deers.forEach(function (deer) {
             deer.translateZ(_this.moveSpeed);
             if (deer.position.z > _this.camera.position.z) {
-                if (_this.isShaking > 0)
-                    _this.isShaking = 14;
-                else
-                    _this.isShaking = 15;
-                _this.addCrack();
+                if ((deer.position.x - _this.deerWidth < _this.camera.position.x + _this.deerWidth && deer.position.x - _this.deerWidth > _this.camera.position.x - _this.deerWidth) || (deer.position.x + _this.deerWidth < _this.camera.position.x + _this.deerWidth && deer.position.x + _this.deerWidth > _this.camera.position.x - _this.deerWidth)) {
+                    if (_this.isShaking > 0)
+                        _this.isShaking = 14;
+                    else
+                        _this.isShaking = 15;
+                    _this.addCrack();
+                }
                 delete _this.deers[_this.deers.indexOf(deer)];
                 _this.scene.remove(deer);
             }

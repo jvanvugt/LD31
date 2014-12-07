@@ -22,6 +22,7 @@ class Game {
     oldCamPos: THREE.Vector3;
     deerModel: THREE.Mesh;
     deers: THREE.Mesh[];
+    deerWidth: number = 65;
 
     constructor(content: HTMLElement) {
         this.input = new Input();
@@ -147,7 +148,7 @@ class Game {
         });
         this.skyLine.position.x = this.camera.position.x;
         if(this.carInterior)
-            this.carInterior.position.x = this.camera.position.x;
+            this.carInterior.position.x = this.camera.position.x + 3;
         this.windscreen.position.x = this.camera.position.x;
         for (var i = 0; i < this.cracks.length; i++) {
             this.cracks[i].position.x = this.camera.position.x + this.cracksXPos[i];
@@ -165,10 +166,13 @@ class Game {
         this.deers.forEach((deer) => {
             deer.translateZ(this.moveSpeed);
             if (deer.position.z > this.camera.position.z) {
-                if (this.isShaking > 0)
-                    this.isShaking = 14;
-                else this.isShaking = 15;
-                this.addCrack();
+                if ((deer.position.x - this.deerWidth < this.camera.position.x + this.deerWidth && deer.position.x - this.deerWidth > this.camera.position.x - this.deerWidth) ||
+                    (deer.position.x + this.deerWidth < this.camera.position.x + this.deerWidth && deer.position.x + this.deerWidth > this.camera.position.x - this.deerWidth)) {
+                    if (this.isShaking > 0)
+                        this.isShaking = 14;
+                    else this.isShaking = 15;
+                    this.addCrack();
+                }
                 delete this.deers[this.deers.indexOf(deer)];
                 this.scene.remove(deer);
             }
