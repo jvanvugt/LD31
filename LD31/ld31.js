@@ -23,11 +23,15 @@ var AudioPlayer = (function () {
     };
 
     AudioPlayer.prototype.playSound = function (buffer) {
-        var source = this.context.createBufferSource();
-        source.buffer = buffer;
-        source.connect(this.context.destination);
-        source.loop = true;
-        source.start(0);
+        this.source = this.context.createBufferSource();
+        this.source.buffer = buffer;
+        this.source.connect(this.context.destination);
+        this.source.loop = true;
+        this.source.start(0);
+    };
+
+    AudioPlayer.prototype.mute = function () {
+        this.source.stop(0);
     };
     return AudioPlayer;
 })();
@@ -102,7 +106,6 @@ var Game = (function () {
             road.position.z = 290;
             road.rotateY(Math.PI / 2);
             road.updateMatrix();
-            road.receiveShadow = true;
             _this.scene.add(road);
         });
 
@@ -120,14 +123,12 @@ var Game = (function () {
             _this.deerModel = new THREE.Mesh(geom, new THREE.MeshFaceMaterial(materials));
             _this.deerModel.scale.set(80, 80, 80);
             _this.deerModel.position.y = -125;
-            _this.deerModel.rotateY(2);
         });
 
         loader.load("Models/tree.json", function (geom, materials) {
             var tree = new THREE.Mesh(geom, new THREE.MeshFaceMaterial(materials));
             tree.position.z = -1000;
             tree.scale.set(40, 40, 40);
-            tree.castShadow = true;
             for (var i = 0; i < 9 * 2; i++) {
                 var newTree = tree.clone();
                 newTree.translateX(350 * ((i % 2 == 0) ? -1 : 1));
@@ -163,7 +164,9 @@ var Game = (function () {
 
     Game.prototype.update = function () {
         var _this = this;
-        console.log(this.camera.position);
+        if (77 in this.input.keysDown) {
+            this.audioPlayer.mute();
+        }
 
         if (68 in this.input.keysDown && this.camera.position.x < 160) {
             this.camera.position.x += 5;
@@ -171,10 +174,6 @@ var Game = (function () {
 
         if (65 in this.input.keysDown && this.camera.position.x > -180) {
             this.camera.position.x -= 5;
-        }
-
-        if (32 in this.input.keysDown) {
-            this.addCrack();
         }
 
         this.trees.forEach(function (tree) {

@@ -4,6 +4,7 @@ class AudioPlayer {
 
     context: AudioContext;
     songBuffer: AudioBuffer;
+    source: AudioBufferSourceNode;
 
     constructor() {
         try {
@@ -28,11 +29,15 @@ class AudioPlayer {
     }
 
     playSound(buffer: AudioBuffer) {
-        var source = this.context.createBufferSource();
-        source.buffer = buffer;
-        source.connect(this.context.destination);
-        source.loop = true;
-        source.start(0);
+        this.source = this.context.createBufferSource();
+        this.source.buffer = buffer;
+        this.source.connect(this.context.destination);
+        this.source.loop = true;
+        this.source.start(0);
+    }
+
+    mute() {
+        this.source.stop(0);
     }
 
 }

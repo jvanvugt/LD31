@@ -53,7 +53,6 @@ class Game {
             road.position.z = 290;
             road.rotateY(Math.PI / 2);
             road.updateMatrix();
-            road.receiveShadow = true;
             this.scene.add(road);
         });
 
@@ -71,14 +70,12 @@ class Game {
             this.deerModel = new THREE.Mesh(geom, new THREE.MeshFaceMaterial(materials));
             this.deerModel.scale.set(80, 80, 80);
             this.deerModel.position.y = -125;
-            this.deerModel.rotateY(2);
         });
 
         loader.load("Models/tree.json", (geom, materials) => {
             var tree = new THREE.Mesh(geom, new THREE.MeshFaceMaterial(materials));
             tree.position.z = -1000;
             tree.scale.set(40, 40, 40);
-            tree.castShadow = true;
             for (var i = 0; i < 9 * 2; i++) {
                 var newTree: THREE.Mesh = tree.clone();
                 newTree.translateX(350 * ((i % 2 == 0) ? -1 : 1));
@@ -120,9 +117,9 @@ class Game {
 
     update() {
 
-
-
-        console.log(this.camera.position);
+        if (77 in this.input.keysDown) { // M
+            this.audioPlayer.mute();
+        }
 
         if (68 in this.input.keysDown && this.camera.position.x < 160) { // D
             this.camera.position.x += 5;
@@ -130,10 +127,6 @@ class Game {
 
         if (65 in this.input.keysDown && this.camera.position.x > -180) { // A
             this.camera.position.x -= 5;
-        }
-
-        if (32 in this.input.keysDown) {
-            this.addCrack();
         }
 
         this.trees.forEach((tree: THREE.Mesh) => {
