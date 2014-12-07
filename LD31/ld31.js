@@ -35,7 +35,7 @@ var Game = (function () {
         var _this = this;
         this.treeOffset = 1000;
         this.moveSpeed = 16;
-        this.isShaking = false;
+        this.isShaking = -1;
         this.tick = function () {
             _this.update();
             _this.render();
@@ -123,6 +123,14 @@ var Game = (function () {
 
     Game.prototype.update = function () {
         var _this = this;
+        if (this.isShaking > 0) {
+            this.shakeCamera(3);
+        }
+        if (this.isShaking == 0) {
+            this.resetCamera();
+            this.isShaking = -1;
+        }
+
         if (68 in this.input.keysDown && this.camera.position.x < 160) {
             this.camera.position.x += 5;
         }
@@ -133,14 +141,6 @@ var Game = (function () {
 
         if (32 in this.input.keysDown) {
             this.addCrack();
-        }
-
-        if (16 in this.input.keysDown) {
-            this.shakeCamera(1);
-        }
-
-        if (!(16 in this.input.keysDown) && this.isShaking) {
-            this.resetCamera();
         }
 
         this.trees.forEach(function (tree) {
@@ -167,7 +167,7 @@ var Game = (function () {
         }
 
         if (this.deerModel) {
-            if (Math.random() < 0.01) {
+            if (Utils.randomRange(0, 300) == 200) {
                 var newDeer = this.deerModel.clone();
                 newDeer.position.z = -5000;
                 newDeer.position.x = Utils.randomRange(-325, 275);
@@ -177,6 +177,13 @@ var Game = (function () {
         }
         this.deers.forEach(function (deer) {
             deer.translateZ(_this.moveSpeed);
+            if (deer.position.z > _this.camera.position.z) {
+                _this.isShaking = 30;
+                _this.addCrack();
+                _this.shakeCamera(3);
+                delete _this.deers[_this.deers.indexOf(deer)];
+                _this.scene.remove(deer);
+            }
         });
     };
 
@@ -234,21 +241,18 @@ var Game = (function () {
     };
 
     Game.prototype.shakeCamera = function (amount) {
-        if (!this.isShaking) {
+        if (this.isShaking == 30) {
             this.oldCamPos = this.camera.position.clone();
-            this.isShaking = true;
         }
-
+        this.isShaking--;
         this.camera.translateX(Math.random() * amount * Utils.randomDir());
         this.camera.translateY(Math.random() * amount * Utils.randomDir());
         this.camera.translateZ(Math.random() * amount * Utils.randomDir());
     };
 
     Game.prototype.resetCamera = function () {
-        this.isShaking = false;
+        this.isShaking = 0;
         this.camera.position = this.oldCamPos;
-        console.log(this.camera.position);
-        console.log(this.oldCamPos);
     };
     return Game;
 })();
