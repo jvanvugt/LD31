@@ -18,14 +18,12 @@
     <IISExpressUseClassicPipelineMode />
   </PropertyGroup>
   <ItemGroup>
-    <Content Include="Scripts\ColladaLoader.js" />
     <Content Include="style.css" />
     <Content Include="index.html" />
     <Content Include="Scripts\three.js" />
     <Content Include="web.config" />
   </ItemGroup>
   <ItemGroup>
-    <TypeScriptCompile Include="colladaloader.d.ts" />
     <TypeScriptCompile Include="game.ts" />
     <TypeScriptCompile Include="input.ts" />
     <TypeScriptCompile Include="Scripts\typings\threejs\detector.d.ts" />

@@ -1,8 +1,6 @@
 ﻿/// <reference path="scripts/typings/threejs/three.d.ts" />
 /// <reference path="input.ts" />
 /// <reference path="utils.ts" />
-/// <reference path="colladaloader.d.ts" />
-
 class Game {
 
     renderer: THREE.Renderer;
@@ -30,24 +28,65 @@ class Game {
         this.camera = new THREE.PerspectiveCamera(60, 16 / 9, 0.1, 10000);
         this.camera.position.z = 300;
         this.scene = new THREE.Scene;
-        var light = new THREE.PointLight(0xffffff);
-        this.trees = [];
-        light.position.z = 300;
+
+        var light = new THREE.DirectionalLight(0xFDB813);
+        light.position.z = 350;
+        light.position.y = 300;
+        light.lookAt(this.camera.position);
         this.scene.add(light);
+
+        this.trees = [];
         var loader: THREE.JSONLoader = new THREE.JSONLoader(true);
+
+        loader.load("Models/road.json", (geom, materials) => {
+            var road: THREE.Mesh = new THREE.Mesh(geom, new THREE.MeshFaceMaterial(materials));
+            road.scale.set(3000, 1000, 250);
+            road.position.y = -75;
+            road.position.z = 290;
+            road.rotateY(Math.PI / 2);
+            road.updateMatrix();
+            this.scene.add(road);
+        });
+
+        loader.load("Models/car.json", (geom, materials) => {
+            this.carInterior = new THREE.Mesh(geom, new THREE.MeshFaceMaterial(materials));
+            this.carInterior.position.z = 279;
+            this.carInterior.position.y = -12;
+            this.carInterior.position.x = 1;
+            this.carInterior.rotateY(Math.PI);
+            this.carInterior.scale.set(12, 8, 4);
+            this.scene.add(this.carInterior);
+        });
+
         loader.load("Models/tree.json", (geom, materials) => {
-            console.log(materials);
-            var mesh = new THREE.Mesh(geom, new THREE.MeshFaceMaterial(materials));
-            mesh.position.z = -1000;
-            mesh.scale.set(40, 40, 40);
-            for (var i = 0; i < 7 * 2; i++) {
-                var newTree: THREE.Mesh = mesh.clone();
+            var tree = new THREE.Mesh(geom, new THREE.MeshFaceMaterial(materials));
+            tree.position.z = -1000;
+            tree.scale.set(40, 40, 40);
+            for (var i = 0; i < 9 * 2; i++) {
+                var newTree: THREE.Mesh = tree.clone();
                 newTree.translateX(350 * ((i % 2 == 0) ? -1 : 1));
                 newTree.translateZ(-Math.floor(i / 2) * this.treeOffset);
                 this.trees.push(newTree);
                 this.scene.add(newTree);
             }
         });
+        this.foliage = [];
+        loader.load("Models/grass.json", (geom, materials) => {
+            var grass = new THREE.Mesh(geom, new THREE.MeshFaceMaterial(materials));
+            grass.scale.set(20, 40, 20);
+            grass.position.z = -1000;
+            grass.position.y = -75;
+            for (var i = 0; i < 150; i++) {
+                var newGrass: THREE.Mesh = grass.clone();
+                var xOffset = Utils.randomRange(400, 1600);
+                newGrass.translateX(xOffset * Utils.randomDir());
+                newGrass.translateZ(Math.floor(Math.random() * 3000));
+                this.foliage.push(newGrass);
+            }
+            this.foliage.forEach((fol: THREE.Mesh) => this.scene.add(fol));
+
+        });
+
         this.createScene();
         content.appendChild(this.renderer.domElement);
     }
@@ -77,7 +116,7 @@ class Game {
         }
 
         if (16 in this.input.keysDown) {
-            this.shakeCamera(5);
+            this.shakeCamera(1);
         }
 
         if (!(16 in this.input.keysDown) && this.isShaking) {
@@ -102,7 +141,8 @@ class Game {
             }
         });
         this.skyLine.position.x = this.camera.position.x;
-        this.carInterior.position.x = this.camera.position.x;
+        if(this.carInterior)
+            this.carInterior.position.x = this.camera.position.x;
         this.windscreen.position.x = this.camera.position.x;
         for (var i = 0; i < this.cracks.length; i++) {
             this.cracks[i].position.x = this.camera.position.x + this.cracksXPos[i];
@@ -111,9 +151,9 @@ class Game {
 
     addCrack() {
         var crack = this.crackSprites[Math.floor(Math.random() * this.crackSprites.length)].clone();
-        var xPos = Utils.randomRange(-30, 80);
+        var xPos = Utils.randomRange(-40, 50);
         this.cracksXPos.push(xPos);
-        crack.position.set(xPos, Utils.randomRange(-30, 30), 254);
+        crack.position.set(xPos, Utils.randomRange(-15, 15), 254);
         crack.rotateZ(Math.random() * Math.PI * 2);
         this.scene.add(crack);
         this.cracks.push(crack);
@@ -127,40 +167,15 @@ class Game {
         //this.scene.fog = new THREE.Fog(0xcccccc, 0.1, 3000);
         this.scene.add(this.camera);
 
-        this.carInterior = this.loadPlane(160, 90, "interior.png");
-        this.carInterior.translateZ(255);
-        this.scene.add(this.carInterior);
-
         this.windscreen = this.loadPlane(160, 90, "windscreen.png");
         this.windscreen.translateZ(253);
         this.scene.add(this.windscreen);
-
-        this.road = this.loadPlane(100, 100, "road.png");
-        this.road.translateY(-100);
-        this.road.translateZ(500);
-        this.road.rotateX(-Math.PI / 2);
-        this.road.scale.x = 120;
-        this.road.scale.y = 1000;
         this.skyLine = this.loadPlane(100, 100, "skyline.png");
         this.skyLine.material.setValues({ fog: false });
         this.skyLine.translateZ(-6000);
         this.skyLine.scale.x = 140;
         this.skyLine.scale.y = 30;
         this.skyLine.translateY(30 * 100 / 2 - 300);
-
-        var grass: THREE.Mesh = this.loadPlane(100, 100, "foliage.png");
-        grass.translateY(-75);
-        grass.scale.y = 0.5;
-        grass.translateZ(-1000);
-        this.foliage = [];
-        for (var i = 0; i < 150; i++) {
-            var newGrass: THREE.Mesh = grass.clone();
-            var xOffset = Utils.randomRange(400, 1600);
-            newGrass.translateX(xOffset * Utils.randomDir());
-            newGrass.translateZ(Math.floor(Math.random() * 3000));
-            this.foliage.push(newGrass);
-        }
-        this.foliage.forEach((fol: THREE.Mesh) => this.scene.add(fol));
 
         var sky: THREE.Mesh = this.loadPlane(100, 100, "sky.png");
         sky.material.setValues({ fog: true });
@@ -171,7 +186,6 @@ class Game {
         this.scene.add(sky);
 
         this.scene.add(this.skyLine);
-        this.scene.add(this.road);
 
         this.crackSprites = [];
         this.crackSprites.push(this.loadPlane(32, 32, "crack2.png"));
