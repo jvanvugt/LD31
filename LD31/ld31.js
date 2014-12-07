@@ -1,4 +1,37 @@
-﻿/// <reference path="game.ts" />
+﻿/// <reference path="scripts/typings/webaudioapi/waa.d.ts" />
+var AudioPlayer = (function () {
+    function AudioPlayer() {
+        try  {
+            this.context = new AudioContext();
+        } catch (e) {
+            alert("Your browser does not support the Web Audio API. Please upgrade your browser!");
+        }
+    }
+    AudioPlayer.prototype.loadMusic = function (songPath) {
+        var _this = this;
+        var request = new XMLHttpRequest();
+        request.open('GET', songPath, true);
+        request.responseType = 'arraybuffer';
+
+        request.onload = function () {
+            _this.context.decodeAudioData(request.response, function (buffer) {
+                _this.songBuffer = buffer;
+                _this.playSound(buffer);
+            });
+        };
+        request.send();
+    };
+
+    AudioPlayer.prototype.playSound = function (buffer) {
+        var source = this.context.createBufferSource();
+        source.buffer = buffer;
+        source.connect(this.context.destination);
+        source.loop = true;
+        source.start(0);
+    };
+    return AudioPlayer;
+})();
+/// <reference path="game.ts" />
 var Input = (function () {
     function Input() {
         var _this = this;
@@ -37,11 +70,14 @@ var Game = (function () {
         this.moveSpeed = 16;
         this.isShaking = -1;
         this.deerWidth = 65;
+        this.deerHit = 0;
         this.tick = function () {
             _this.update();
             _this.render();
             window.requestAnimationFrame(_this.tick);
         };
+        this.audioPlayer = new AudioPlayer();
+        this.audioPlayer.loadMusic("Sound/song1.ogg");
         this.input = new Input();
         this.renderer = new THREE.WebGLRenderer();
         this.renderer.setSize(960, 600);
@@ -66,6 +102,7 @@ var Game = (function () {
             road.position.z = 290;
             road.rotateY(Math.PI / 2);
             road.updateMatrix();
+            road.receiveShadow = true;
             _this.scene.add(road);
         });
 
@@ -79,16 +116,18 @@ var Game = (function () {
             _this.scene.add(_this.carInterior);
         });
 
-        loader.load("Models/deer.json", function (geom, materials) {
+        loader.load("Models/deer2.json", function (geom, materials) {
             _this.deerModel = new THREE.Mesh(geom, new THREE.MeshFaceMaterial(materials));
             _this.deerModel.scale.set(80, 80, 80);
             _this.deerModel.position.y = -125;
+            _this.deerModel.rotateY(2);
         });
 
         loader.load("Models/tree.json", function (geom, materials) {
             var tree = new THREE.Mesh(geom, new THREE.MeshFaceMaterial(materials));
             tree.position.z = -1000;
             tree.scale.set(40, 40, 40);
+            tree.castShadow = true;
             for (var i = 0; i < 9 * 2; i++) {
                 var newTree = tree.clone();
                 newTree.translateX(350 * ((i % 2 == 0) ? -1 : 1));
@@ -162,7 +201,7 @@ var Game = (function () {
         }
 
         if (this.deerModel) {
-            if (Utils.randomRange(0, 250) == 5) {
+            if (Utils.randomRange(0, 200) == 5) {
                 var newDeer = this.deerModel.clone();
                 newDeer.position.z = -5000;
                 newDeer.position.x = Utils.randomRange(-325, 275);
@@ -172,8 +211,9 @@ var Game = (function () {
         }
         this.deers.forEach(function (deer) {
             deer.translateZ(_this.moveSpeed);
-            if (deer.position.z > _this.camera.position.z) {
+            if (deer.position.z > _this.carInterior.position.z) {
                 if ((deer.position.x - _this.deerWidth < _this.camera.position.x + _this.deerWidth && deer.position.x - _this.deerWidth > _this.camera.position.x - _this.deerWidth) || (deer.position.x + _this.deerWidth < _this.camera.position.x + _this.deerWidth && deer.position.x + _this.deerWidth > _this.camera.position.x - _this.deerWidth)) {
+                    _this.deerHit++;
                     if (_this.isShaking > 0)
                         _this.isShaking = 14;
                     else
@@ -210,17 +250,17 @@ var Game = (function () {
     Game.prototype.createScene = function () {
         this.scene.add(this.camera);
 
-        this.windscreen = this.loadPlane(160, 90, "windscreen.png");
+        this.windscreen = this.loadPlane(160, 90, "Images/windscreen.png");
         this.windscreen.translateZ(253);
         this.scene.add(this.windscreen);
-        this.skyLine = this.loadPlane(100, 100, "skyline.png");
+        this.skyLine = this.loadPlane(100, 100, "Images/skyline.png");
         this.skyLine.material.setValues({ fog: false });
         this.skyLine.translateZ(-6000);
         this.skyLine.scale.x = 140;
         this.skyLine.scale.y = 30;
         this.skyLine.translateY(30 * 100 / 2 - 300);
 
-        var sky = this.loadPlane(100, 100, "sky.png");
+        var sky = this.loadPlane(100, 100, "Images/sky.png");
         sky.material.setValues({ fog: true });
         sky.translateY(2000);
         sky.translateZ(this.skyLine.position.z - 50);
@@ -231,9 +271,9 @@ var Game = (function () {
         this.scene.add(this.skyLine);
 
         this.crackSprites = [];
-        this.crackSprites.push(this.loadPlane(32, 32, "crack2.png"));
-        this.crackSprites.push(this.loadPlane(32, 32, "crack3.png"));
-        this.crackSprites.push(this.loadPlane(32, 32, "crack4.png"));
+        this.crackSprites.push(this.loadPlane(32, 32, "Images/crack2.png"));
+        this.crackSprites.push(this.loadPlane(32, 32, "Images/crack3.png"));
+        this.crackSprites.push(this.loadPlane(32, 32, "Images/crack4.png"));
         this.cracks = [];
         this.cracksXPos = [];
     };

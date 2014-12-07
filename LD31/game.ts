@@ -23,8 +23,12 @@ class Game {
     deerModel: THREE.Mesh;
     deers: THREE.Mesh[];
     deerWidth: number = 65;
+    deerHit: number = 0;
+    audioPlayer: AudioPlayer;
 
     constructor(content: HTMLElement) {
+        this.audioPlayer = new AudioPlayer();
+        this.audioPlayer.loadMusic("Sound/song1.ogg");
         this.input = new Input();
         this.renderer = new THREE.WebGLRenderer();
         this.renderer.setSize(960, 600);
@@ -49,6 +53,7 @@ class Game {
             road.position.z = 290;
             road.rotateY(Math.PI / 2);
             road.updateMatrix();
+            road.receiveShadow = true;
             this.scene.add(road);
         });
 
@@ -62,16 +67,18 @@ class Game {
             this.scene.add(this.carInterior);
         });
 
-        loader.load("Models/deer.json", (geom, materials) => {
+        loader.load("Models/deer2.json", (geom, materials) => {
             this.deerModel = new THREE.Mesh(geom, new THREE.MeshFaceMaterial(materials));
             this.deerModel.scale.set(80, 80, 80);
             this.deerModel.position.y = -125;
+            this.deerModel.rotateY(2);
         });
 
         loader.load("Models/tree.json", (geom, materials) => {
             var tree = new THREE.Mesh(geom, new THREE.MeshFaceMaterial(materials));
             tree.position.z = -1000;
             tree.scale.set(40, 40, 40);
+            tree.castShadow = true;
             for (var i = 0; i < 9 * 2; i++) {
                 var newTree: THREE.Mesh = tree.clone();
                 newTree.translateX(350 * ((i % 2 == 0) ? -1 : 1));
@@ -155,7 +162,7 @@ class Game {
         }
 
         if (this.deerModel) {
-            if (Utils.randomRange(0, 250) == 5) {
+            if (Utils.randomRange(0, 200) == 5) {
                 var newDeer = this.deerModel.clone();
                 newDeer.position.z = -5000;
                 newDeer.position.x = Utils.randomRange(-325, 275);
@@ -165,9 +172,10 @@ class Game {
         }
         this.deers.forEach((deer) => {
             deer.translateZ(this.moveSpeed);
-            if (deer.position.z > this.camera.position.z) {
+            if (deer.position.z > this.carInterior.position.z) {
                 if ((deer.position.x - this.deerWidth < this.camera.position.x + this.deerWidth && deer.position.x - this.deerWidth > this.camera.position.x - this.deerWidth) ||
                     (deer.position.x + this.deerWidth < this.camera.position.x + this.deerWidth && deer.position.x + this.deerWidth > this.camera.position.x - this.deerWidth)) {
+                    this.deerHit++;
                     if (this.isShaking > 0)
                         this.isShaking = 14;
                     else this.isShaking = 15;
@@ -203,17 +211,17 @@ class Game {
     createScene() {
         this.scene.add(this.camera);
 
-        this.windscreen = this.loadPlane(160, 90, "windscreen.png");
+        this.windscreen = this.loadPlane(160, 90, "Images/windscreen.png");
         this.windscreen.translateZ(253);
         this.scene.add(this.windscreen);
-        this.skyLine = this.loadPlane(100, 100, "skyline.png");
+        this.skyLine = this.loadPlane(100, 100, "Images/skyline.png");
         this.skyLine.material.setValues({ fog: false });
         this.skyLine.translateZ(-6000);
         this.skyLine.scale.x = 140;
         this.skyLine.scale.y = 30;
         this.skyLine.translateY(30 * 100 / 2 - 300);
 
-        var sky: THREE.Mesh = this.loadPlane(100, 100, "sky.png");
+        var sky: THREE.Mesh = this.loadPlane(100, 100, "Images/sky.png");
         sky.material.setValues({ fog: true });
         sky.translateY(2000);
         sky.translateZ(this.skyLine.position.z - 50);
@@ -224,9 +232,9 @@ class Game {
         this.scene.add(this.skyLine);
 
         this.crackSprites = [];
-        this.crackSprites.push(this.loadPlane(32, 32, "crack2.png"));
-        this.crackSprites.push(this.loadPlane(32, 32, "crack3.png"));
-        this.crackSprites.push(this.loadPlane(32, 32, "crack4.png"));
+        this.crackSprites.push(this.loadPlane(32, 32, "Images/crack2.png"));
+        this.crackSprites.push(this.loadPlane(32, 32, "Images/crack3.png"));
+        this.crackSprites.push(this.loadPlane(32, 32, "Images/crack4.png"));
         this.cracks = [];
         this.cracksXPos = [];
 
