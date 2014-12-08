@@ -28,6 +28,9 @@ class Game {
     deerHit: number = 0;
     audioPlayer: AudioPlayer;
     gui: dat.GUI;
+    carModel: THREE.Mesh;
+    cars: THREE.Mesh[];
+    carWidth: number = 65;
 
     constructor(content: HTMLElement) {
         this.content = content;
@@ -40,8 +43,9 @@ class Game {
         this.camera.position.z = 300;
         this.scene = new THREE.Scene;
         this.deers = [];
+        this.cars = [];
 
-        var light = new THREE.DirectionalLight(0xFDB813);
+        var light = new THREE.DirectionalLight(0xFFFFFF);
         light.position.z = 350;
         light.position.y = 300;
         light.lookAt(this.camera.position);
@@ -58,6 +62,14 @@ class Game {
             road.rotateY(Math.PI / 2);
             road.updateMatrix();
             this.scene.add(road);
+        });
+
+        loader.load("Models/nextCar.json", (geom, materials) => {
+            this.carModel = new THREE.Mesh(geom, new THREE.MeshFaceMaterial(materials));
+            this.carModel.position.z = 0;
+            this.carModel.position.y = -100;
+            this.carModel.scale.set(30, 30, 30);
+            this.carModel.rotateY(Math.PI);
         });
 
         loader.load("Models/car.json", (geom, materials) => {
@@ -111,6 +123,7 @@ class Game {
 
     start(): void {
         this.gui = new dat.GUI({ autoPlace: false });
+        this.gui.domElement.style.zoom = "200%";
         this.content.appendChild(this.gui.domElement);
         this.gui.add(this, "deerHit").listen();
         this.tick();
@@ -167,11 +180,34 @@ class Game {
                 if(Math.random() > 0.5)
                     this.deerModel.rotateY(Math.PI);
                 newDeer.position.z = -5000;
-                newDeer.position.x = Utils.randomRange(-325, 275);
+                newDeer.position.x = Utils.randomRange(-300, 275);
                 this.scene.add(newDeer);
                 this.deers.push(newDeer);
             }
         }
+
+        if (this.carModel) {
+            if (Utils.randomRange(0, 200) == 5) {
+                var newCar = this.carModel.clone();
+                newCar.position.z = -5000;
+                newCar.position.x = Utils.randomRange(-300, 275);
+                this.scene.add(newCar);
+                this.cars.push(newCar);
+            }
+        }
+
+        this.cars.forEach((car) => {
+            car.translateZ(-this.moveSpeed * 1.5);
+            if (car.position.z > this.carInterior.position.z) {
+                if ((car.position.x - this.carWidth < this.camera.position.x + this.carWidth && car.position.x - this.carWidth > this.camera.position.x - this.carWidth) ||
+                    (car.position.x + this.carWidth < this.camera.position.x + this.carWidth && car.position.x + this.carWidth > this.camera.position.x - this.carWidth)) {
+                    this.die();
+                }
+                delete this.cars[this.cars.indexOf(car)];
+                this.scene.remove(car);
+            }
+        });
+
         this.deers.forEach((deer) => {
             deer.translateZ(this.moveSpeed * ((deer.rotation.y == 0) ? 1 : -1));
             if (deer.position.z > this.carInterior.position.z) {
@@ -210,6 +246,17 @@ class Game {
 
     render() {
         this.renderer.render(this.scene, this.camera);
+    }
+
+    die() {
+        this.cars = [];
+        this.deers = [];
+        this.cracks = [];
+        this.scene = new THREE.Scene();
+        this.createScene();
+        this.cracksXPos = [];
+        this.isShaking = -1;
+        this.deerHit = 0;
     }
 
     createScene() {
@@ -266,7 +313,6 @@ class Game {
         this.camera.position.set(this.oldCamPos.x, this.oldCamPos.y, this.oldCamPos.z);
         this.isShaking--;
     }
-
 }
 
 window.onload = () => {
