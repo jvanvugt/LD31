@@ -5,6 +5,9 @@ class AudioPlayer {
     context: AudioContext;
     songBuffer: AudioBuffer;
     source: AudioBufferSourceNode;
+    sfxsrc: AudioBufferSourceNode;
+    sfxBuffer: AudioBuffer;
+    muted: boolean = false;
 
     constructor() {
         try {
@@ -27,6 +30,27 @@ class AudioPlayer {
         request.send();
     }
 
+    loadSFX(name: string) {
+        var request = new XMLHttpRequest();
+        request.open('GET', name, true);
+        request.responseType = 'arraybuffer';
+        request.onload = () => {
+            this.context.decodeAudioData(request.response, (buffer) => {
+                this.sfxBuffer = buffer;
+            });
+        }
+        request.send();
+    }
+
+    playSFX() {
+        if (!this.muted) {
+            this.sfxsrc = this.context.createBufferSource();
+            this.sfxsrc.buffer = this.sfxBuffer;
+            this.sfxsrc.connect(this.context.destination);
+            this.sfxsrc.start(0);
+        }
+    }
+
     playSound(buffer: AudioBuffer) {
         this.source = this.context.createBufferSource();
         this.source.buffer = buffer;
@@ -36,7 +60,14 @@ class AudioPlayer {
     }
 
     mute() {
-        this.source.stop(0);
+        if (this.muted) {
+            this.source.start(0);
+            this.muted = false;
+        }
+        else {
+            this.muted = true
+            this.source.stop(0);
+        }
     }
 
 }

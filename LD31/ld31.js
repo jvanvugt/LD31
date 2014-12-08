@@ -1,6 +1,7 @@
 ﻿/// <reference path="scripts/typings/webaudioapi/waa.d.ts" />
 var AudioPlayer = (function () {
     function AudioPlayer() {
+        this.muted = false;
         try  {
             this.context = new AudioContext();
         } catch (e) {
@@ -21,6 +22,28 @@ var AudioPlayer = (function () {
         request.send();
     };
 
+    AudioPlayer.prototype.loadSFX = function (name) {
+        var _this = this;
+        var request = new XMLHttpRequest();
+        request.open('GET', name, true);
+        request.responseType = 'arraybuffer';
+        request.onload = function () {
+            _this.context.decodeAudioData(request.response, function (buffer) {
+                _this.sfxBuffer = buffer;
+            });
+        };
+        request.send();
+    };
+
+    AudioPlayer.prototype.playSFX = function () {
+        if (!this.muted) {
+            this.sfxsrc = this.context.createBufferSource();
+            this.sfxsrc.buffer = this.sfxBuffer;
+            this.sfxsrc.connect(this.context.destination);
+            this.sfxsrc.start(0);
+        }
+    };
+
     AudioPlayer.prototype.playSound = function (buffer) {
         this.source = this.context.createBufferSource();
         this.source.buffer = buffer;
@@ -30,7 +53,13 @@ var AudioPlayer = (function () {
     };
 
     AudioPlayer.prototype.mute = function () {
-        this.source.stop(0);
+        if (this.muted) {
+            this.source.start(0);
+            this.muted = false;
+        } else {
+            this.muted = true;
+            this.source.stop(0);
+        }
     };
     return AudioPlayer;
 })();
@@ -72,7 +101,7 @@ var Game = (function () {
         this.treeOffset = 1000;
         this.moveSpeed = 16;
         this.isShaking = -1;
-        this.deerWidth = 65;
+        this.deerWidth = 60;
         this.deerHit = 0;
         this.carWidth = 65;
         this.tick = function () {
@@ -83,6 +112,7 @@ var Game = (function () {
         this.content = content;
         this.audioPlayer = new AudioPlayer();
         this.audioPlayer.loadMusic("Sound/song1.ogg");
+        this.audioPlayer.loadSFX("Sound/hit.wav");
         this.input = new Input();
         this.renderer = new THREE.WebGLRenderer();
         this.renderer.setSize(960, 600);
@@ -92,23 +122,23 @@ var Game = (function () {
         this.deers = [];
         this.cars = [];
 
-        var light = new THREE.DirectionalLight(0xFFFFFF);
-        light.position.z = 350;
-        light.position.y = 300;
-        light.lookAt(this.camera.position);
-        this.scene.add(light);
+        this.light = new THREE.DirectionalLight(0xFFFFFF);
+        this.light.position.z = 350;
+        this.light.position.y = 300;
+        this.light.lookAt(this.camera.position);
+        this.scene.add(this.light);
 
         this.trees = [];
         var loader = new THREE.JSONLoader(true);
 
         loader.load("Models/road.json", function (geom, materials) {
-            var road = new THREE.Mesh(geom, new THREE.MeshFaceMaterial(materials));
-            road.scale.set(3000, 1000, 250);
-            road.position.y = -75;
-            road.position.z = 290;
-            road.rotateY(Math.PI / 2);
-            road.updateMatrix();
-            _this.scene.add(road);
+            _this.road = new THREE.Mesh(geom, new THREE.MeshFaceMaterial(materials));
+            _this.road.scale.set(3000, 1000, 250);
+            _this.road.position.y = -75;
+            _this.road.position.z = 290;
+            _this.road.rotateY(Math.PI / 2);
+            _this.road.updateMatrix();
+            _this.scene.add(_this.road);
         });
 
         loader.load("Models/nextCar.json", function (geom, materials) {
@@ -117,6 +147,7 @@ var Game = (function () {
             _this.carModel.position.y = -100;
             _this.carModel.scale.set(30, 30, 30);
             _this.carModel.rotateY(Math.PI);
+            _this.start();
         });
 
         loader.load("Models/car.json", function (geom, materials) {
@@ -136,38 +167,44 @@ var Game = (function () {
         });
 
         loader.load("Models/tree.json", function (geom, materials) {
-            var tree = new THREE.Mesh(geom, new THREE.MeshFaceMaterial(materials));
-            tree.position.z = -1000;
-            tree.scale.set(40, 40, 40);
-            for (var i = 0; i < 9 * 2; i++) {
-                var newTree = tree.clone();
-                newTree.translateX(350 * ((i % 2 == 0) ? -1 : 1));
-                newTree.translateZ(-Math.floor(i / 2) * _this.treeOffset);
-                _this.trees.push(newTree);
-                _this.scene.add(newTree);
-            }
+            _this.tree = new THREE.Mesh(geom, new THREE.MeshFaceMaterial(materials));
+            _this.tree.position.z = -1000;
+            _this.tree.scale.set(40, 40, 40);
+            _this.addTrees();
         });
         this.foliage = [];
         loader.load("Models/grass.json", function (geom, materials) {
-            var grass = new THREE.Mesh(geom, new THREE.MeshFaceMaterial(materials));
-            grass.scale.set(20, 40, 20);
-            grass.position.z = -1000;
-            grass.position.y = -75;
-            for (var i = 0; i < 150; i++) {
-                var newGrass = grass.clone();
-                var xOffset = Utils.randomRange(400, 1600);
-                newGrass.translateX(xOffset * Utils.randomDir());
-                newGrass.translateZ(Math.floor(Math.random() * 3000));
-                _this.foliage.push(newGrass);
-            }
-            _this.foliage.forEach(function (fol) {
-                return _this.scene.add(fol);
-            });
+            _this.grass = new THREE.Mesh(geom, new THREE.MeshFaceMaterial(materials));
+            _this.grass.scale.set(20, 40, 20);
+            _this.grass.position.z = -1000;
+            _this.grass.position.y = -75;
+            _this.addFoliage();
         });
 
         this.createScene();
         content.appendChild(this.renderer.domElement);
     }
+    Game.prototype.addTrees = function () {
+        for (var i = 0; i < 9 * 2; i++) {
+            var newTree = this.tree.clone();
+            newTree.translateX(350 * ((i % 2 == 0) ? -1 : 1));
+            newTree.translateZ(-Math.floor(i / 2) * this.treeOffset);
+            this.trees.push(newTree);
+            this.scene.add(newTree);
+        }
+    };
+
+    Game.prototype.addFoliage = function () {
+        for (var i = 0; i < 150; i++) {
+            var newGrass = this.grass.clone();
+            var xOffset = Utils.randomRange(400, 1600);
+            newGrass.translateX(xOffset * Utils.randomDir());
+            newGrass.translateZ(Math.floor(Math.random() * 3000));
+            this.foliage.push(newGrass);
+            this.scene.add(newGrass);
+        }
+    };
+
     Game.prototype.start = function () {
         this.gui = new dat.GUI({ autoPlace: false });
         this.gui.domElement.style.zoom = "200%";
@@ -214,7 +251,7 @@ var Game = (function () {
         }
 
         if (this.deerModel) {
-            if (Utils.randomRange(0, 200) == 5) {
+            if (Utils.randomRange(0, 160) == 5) {
                 var newDeer = this.deerModel.clone();
                 if (Math.random() > 0.5)
                     this.deerModel.rotateY(Math.PI);
@@ -226,7 +263,7 @@ var Game = (function () {
         }
 
         if (this.carModel) {
-            if (Utils.randomRange(0, 200) == 5) {
+            if (Utils.randomRange(0, 300) == 5) {
                 var newCar = this.carModel.clone();
                 newCar.position.z = -5000;
                 newCar.position.x = Utils.randomRange(-300, 275);
@@ -236,9 +273,10 @@ var Game = (function () {
         }
 
         this.cars.forEach(function (car) {
-            car.translateZ(-_this.moveSpeed * 1.5);
+            car.translateZ(-_this.moveSpeed * 2);
             if (car.position.z > _this.carInterior.position.z) {
                 if ((car.position.x - _this.carWidth < _this.camera.position.x + _this.carWidth && car.position.x - _this.carWidth > _this.camera.position.x - _this.carWidth) || (car.position.x + _this.carWidth < _this.camera.position.x + _this.carWidth && car.position.x + _this.carWidth > _this.camera.position.x - _this.carWidth)) {
+                    _this.audioPlayer.playSFX();
                     _this.die();
                 }
                 delete _this.cars[_this.cars.indexOf(car)];
@@ -251,6 +289,7 @@ var Game = (function () {
             if (deer.position.z > _this.carInterior.position.z) {
                 if ((deer.position.x - _this.deerWidth < _this.camera.position.x + _this.deerWidth && deer.position.x - _this.deerWidth > _this.camera.position.x - _this.deerWidth) || (deer.position.x + _this.deerWidth < _this.camera.position.x + _this.deerWidth && deer.position.x + _this.deerWidth > _this.camera.position.x - _this.deerWidth)) {
                     _this.deerHit++;
+                    _this.audioPlayer.playSFX();
                     if (_this.isShaking > 0) {
                         _this.isShaking = 14;
                     } else
@@ -288,11 +327,18 @@ var Game = (function () {
         this.cars = [];
         this.deers = [];
         this.cracks = [];
+        this.trees = [];
+        this.foliage = [];
         this.scene = new THREE.Scene();
-        this.createScene();
         this.cracksXPos = [];
         this.isShaking = -1;
         this.deerHit = 0;
+        this.scene.add(this.road);
+        this.addFoliage();
+        this.addTrees();
+        this.scene.add(this.carInterior);
+        this.scene.add(this.light);
+        this.createScene();
     };
 
     Game.prototype.createScene = function () {
@@ -351,6 +397,6 @@ var Game = (function () {
 })();
 
 window.onload = function () {
-    new Game(document.getElementById('content')).start();
+    new Game(document.getElementById('content'));
 };
 //# sourceMappingURL=ld31.js.map

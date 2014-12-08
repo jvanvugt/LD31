@@ -24,18 +24,22 @@ class Game {
     oldCamPos: THREE.Vector3;
     deerModel: THREE.Mesh;
     deers: THREE.Mesh[];
-    deerWidth: number = 65;
+    deerWidth: number = 60;
     deerHit: number = 0;
     audioPlayer: AudioPlayer;
     gui: dat.GUI;
     carModel: THREE.Mesh;
     cars: THREE.Mesh[];
     carWidth: number = 65;
+    grass: THREE.Mesh;
+    tree: THREE.Mesh;
+    light: THREE.Light;
 
     constructor(content: HTMLElement) {
         this.content = content;
         this.audioPlayer = new AudioPlayer();
         this.audioPlayer.loadMusic("Sound/song1.ogg");
+        this.audioPlayer.loadSFX("Sound/hit.wav");
         this.input = new Input();
         this.renderer = new THREE.WebGLRenderer();
         this.renderer.setSize(960, 600);
@@ -45,23 +49,23 @@ class Game {
         this.deers = [];
         this.cars = [];
 
-        var light = new THREE.DirectionalLight(0xFFFFFF);
-        light.position.z = 350;
-        light.position.y = 300;
-        light.lookAt(this.camera.position);
-        this.scene.add(light);
+        this.light = new THREE.DirectionalLight(0xFFFFFF);
+        this.light.position.z = 350;
+        this.light.position.y = 300;
+        this.light.lookAt(this.camera.position);
+        this.scene.add(this.light);
 
         this.trees = [];
         var loader: THREE.JSONLoader = new THREE.JSONLoader(true);
 
         loader.load("Models/road.json", (geom, materials) => {
-            var road: THREE.Mesh = new THREE.Mesh(geom, new THREE.MeshFaceMaterial(materials));
-            road.scale.set(3000, 1000, 250);
-            road.position.y = -75;
-            road.position.z = 290;
-            road.rotateY(Math.PI / 2);
-            road.updateMatrix();
-            this.scene.add(road);
+            this.road = new THREE.Mesh(geom, new THREE.MeshFaceMaterial(materials));
+            this.road.scale.set(3000, 1000, 250);
+            this.road.position.y = -75;
+            this.road.position.z = 290;
+            this.road.rotateY(Math.PI / 2);
+            this.road.updateMatrix();
+            this.scene.add(this.road);
         });
 
         loader.load("Models/nextCar.json", (geom, materials) => {
@@ -70,6 +74,7 @@ class Game {
             this.carModel.position.y = -100;
             this.carModel.scale.set(30, 30, 30);
             this.carModel.rotateY(Math.PI);
+            this.start();
         });
 
         loader.load("Models/car.json", (geom, materials) => {
@@ -89,36 +94,43 @@ class Game {
         });
 
         loader.load("Models/tree.json", (geom, materials) => {
-            var tree = new THREE.Mesh(geom, new THREE.MeshFaceMaterial(materials));
-            tree.position.z = -1000;
-            tree.scale.set(40, 40, 40);
-            for (var i = 0; i < 9 * 2; i++) {
-                var newTree: THREE.Mesh = tree.clone();
-                newTree.translateX(350 * ((i % 2 == 0) ? -1 : 1));
-                newTree.translateZ(-Math.floor(i / 2) * this.treeOffset);
-                this.trees.push(newTree);
-                this.scene.add(newTree);
-            }
+            this.tree = new THREE.Mesh(geom, new THREE.MeshFaceMaterial(materials));
+            this.tree.position.z = -1000;
+            this.tree.scale.set(40, 40, 40);
+            this.addTrees();
         });
         this.foliage = [];
         loader.load("Models/grass.json", (geom, materials) => {
-            var grass = new THREE.Mesh(geom, new THREE.MeshFaceMaterial(materials));
-            grass.scale.set(20, 40, 20);
-            grass.position.z = -1000;
-            grass.position.y = -75;
-            for (var i = 0; i < 150; i++) {
-                var newGrass: THREE.Mesh = grass.clone();
-                var xOffset = Utils.randomRange(400, 1600);
-                newGrass.translateX(xOffset * Utils.randomDir());
-                newGrass.translateZ(Math.floor(Math.random() * 3000));
-                this.foliage.push(newGrass);
-            }
-            this.foliage.forEach((fol: THREE.Mesh) => this.scene.add(fol));
-
+            this.grass = new THREE.Mesh(geom, new THREE.MeshFaceMaterial(materials));
+            this.grass.scale.set(20, 40, 20);
+            this.grass.position.z = -1000;
+            this.grass.position.y = -75;
+            this.addFoliage();
         });
 
         this.createScene();
         content.appendChild(this.renderer.domElement);
+    }
+
+    addTrees() {
+        for (var i = 0; i < 9 * 2; i++) {
+            var newTree: THREE.Mesh = this.tree.clone();
+            newTree.translateX(350 * ((i % 2 == 0) ? -1 : 1));
+            newTree.translateZ(-Math.floor(i / 2) * this.treeOffset);
+            this.trees.push(newTree);
+            this.scene.add(newTree);
+        }
+    }
+
+    addFoliage() {
+        for (var i = 0; i < 150; i++) {
+            var newGrass: THREE.Mesh = this.grass.clone();
+            var xOffset = Utils.randomRange(400, 1600);
+            newGrass.translateX(xOffset * Utils.randomDir());
+            newGrass.translateZ(Math.floor(Math.random() * 3000));
+            this.foliage.push(newGrass);
+            this.scene.add(newGrass);
+        }
     }
 
     start(): void {
@@ -175,7 +187,7 @@ class Game {
         }
 
         if (this.deerModel) {
-            if (Utils.randomRange(0, 200) == 5) {
+            if (Utils.randomRange(0, 160) == 5) {
                 var newDeer = this.deerModel.clone();
                 if(Math.random() > 0.5)
                     this.deerModel.rotateY(Math.PI);
@@ -187,7 +199,7 @@ class Game {
         }
 
         if (this.carModel) {
-            if (Utils.randomRange(0, 200) == 5) {
+            if (Utils.randomRange(0, 300) == 5) {
                 var newCar = this.carModel.clone();
                 newCar.position.z = -5000;
                 newCar.position.x = Utils.randomRange(-300, 275);
@@ -197,10 +209,11 @@ class Game {
         }
 
         this.cars.forEach((car) => {
-            car.translateZ(-this.moveSpeed * 1.5);
+            car.translateZ(-this.moveSpeed * 2);
             if (car.position.z > this.carInterior.position.z) {
                 if ((car.position.x - this.carWidth < this.camera.position.x + this.carWidth && car.position.x - this.carWidth > this.camera.position.x - this.carWidth) ||
                     (car.position.x + this.carWidth < this.camera.position.x + this.carWidth && car.position.x + this.carWidth > this.camera.position.x - this.carWidth)) {
+                    this.audioPlayer.playSFX();
                     this.die();
                 }
                 delete this.cars[this.cars.indexOf(car)];
@@ -214,6 +227,7 @@ class Game {
                 if ((deer.position.x - this.deerWidth < this.camera.position.x + this.deerWidth && deer.position.x - this.deerWidth > this.camera.position.x - this.deerWidth) ||
                     (deer.position.x + this.deerWidth < this.camera.position.x + this.deerWidth && deer.position.x + this.deerWidth > this.camera.position.x - this.deerWidth)) {
                     this.deerHit++;
+                    this.audioPlayer.playSFX();
                     if (this.isShaking > 0) {
                         this.isShaking = 14;
                     }
@@ -252,11 +266,18 @@ class Game {
         this.cars = [];
         this.deers = [];
         this.cracks = [];
+        this.trees = [];
+        this.foliage = [];
         this.scene = new THREE.Scene();
-        this.createScene();
         this.cracksXPos = [];
         this.isShaking = -1;
         this.deerHit = 0;
+        this.scene.add(this.road);
+        this.addFoliage();
+        this.addTrees();
+        this.scene.add(this.carInterior);
+        this.scene.add(this.light);
+        this.createScene();
     }
 
     createScene() {
@@ -316,5 +337,5 @@ class Game {
 }
 
 window.onload = () => {
-    new Game(document.getElementById('content')).start();
+    new Game(document.getElementById('content'));
 };
