@@ -12,7 +12,6 @@ var AudioPlayer = (function () {
         var request = new XMLHttpRequest();
         request.open('GET', songPath, true);
         request.responseType = 'arraybuffer';
-
         request.onload = function () {
             _this.context.decodeAudioData(request.response, function (buffer) {
                 _this.songBuffer = buffer;
@@ -80,6 +79,7 @@ var Game = (function () {
             _this.render();
             window.requestAnimationFrame(_this.tick);
         };
+        this.content = content;
         this.audioPlayer = new AudioPlayer();
         this.audioPlayer.loadMusic("Sound/song1.ogg");
         this.input = new Input();
@@ -159,6 +159,9 @@ var Game = (function () {
         content.appendChild(this.renderer.domElement);
     }
     Game.prototype.start = function () {
+        this.gui = new dat.GUI({ autoPlace: false });
+        this.content.appendChild(this.gui.domElement);
+        this.gui.add(this, "deerHit").listen();
         this.tick();
     };
 
@@ -215,9 +218,9 @@ var Game = (function () {
             if (deer.position.z > _this.carInterior.position.z) {
                 if ((deer.position.x - _this.deerWidth < _this.camera.position.x + _this.deerWidth && deer.position.x - _this.deerWidth > _this.camera.position.x - _this.deerWidth) || (deer.position.x + _this.deerWidth < _this.camera.position.x + _this.deerWidth && deer.position.x + _this.deerWidth > _this.camera.position.x - _this.deerWidth)) {
                     _this.deerHit++;
-                    if (_this.isShaking > 0)
+                    if (_this.isShaking > 0) {
                         _this.isShaking = 14;
-                    else
+                    } else
                         _this.isShaking = 15;
                     _this.addCrack();
                 }
@@ -297,7 +300,8 @@ var Game = (function () {
     };
 
     Game.prototype.resetCamera = function () {
-        this.camera.position = this.oldCamPos;
+        this.camera.position.set(this.oldCamPos.x, this.oldCamPos.y, this.oldCamPos.z);
+        this.isShaking--;
     };
     return Game;
 })();

@@ -18,7 +18,6 @@ class AudioPlayer {
         var request = new XMLHttpRequest();
         request.open('GET', songPath, true);
         request.responseType = 'arraybuffer';
-
         request.onload = () => {
             this.context.decodeAudioData(request.response, (buffer) => {
                 this.songBuffer = buffer;

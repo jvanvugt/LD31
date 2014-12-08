@@ -4,7 +4,7 @@
 
 
 class Game {
-
+    content: HTMLElement;
     renderer: THREE.Renderer;
     camera: THREE.Camera;
     scene: THREE.Scene;
@@ -27,8 +27,10 @@ class Game {
     deerWidth: number = 65;
     deerHit: number = 0;
     audioPlayer: AudioPlayer;
+    gui: dat.GUI;
 
     constructor(content: HTMLElement) {
+        this.content = content;
         this.audioPlayer = new AudioPlayer();
         this.audioPlayer.loadMusic("Sound/song1.ogg");
         this.input = new Input();
@@ -108,6 +110,9 @@ class Game {
     }
 
     start(): void {
+        this.gui = new dat.GUI({ autoPlace: false });
+        this.content.appendChild(this.gui.domElement);
+        this.gui.add(this, "deerHit").listen();
         this.tick();
     }
 
@@ -173,8 +178,9 @@ class Game {
                 if ((deer.position.x - this.deerWidth < this.camera.position.x + this.deerWidth && deer.position.x - this.deerWidth > this.camera.position.x - this.deerWidth) ||
                     (deer.position.x + this.deerWidth < this.camera.position.x + this.deerWidth && deer.position.x + this.deerWidth > this.camera.position.x - this.deerWidth)) {
                     this.deerHit++;
-                    if (this.isShaking > 0)
+                    if (this.isShaking > 0) {
                         this.isShaking = 14;
+                    }
                     else this.isShaking = 15;
                     this.addCrack();
                 }
@@ -189,6 +195,7 @@ class Game {
         if (this.isShaking == 0) {
             this.resetCamera();
         }
+        
     }
 
     addCrack() {
@@ -234,6 +241,7 @@ class Game {
         this.crackSprites.push(this.loadPlane(32, 32, "Images/crack4.png"));
         this.cracks = [];
         this.cracksXPos = [];
+        
 
     }
 
@@ -255,8 +263,10 @@ class Game {
     }
 
     resetCamera() {
-        this.camera.position = this.oldCamPos;
+        this.camera.position.set(this.oldCamPos.x, this.oldCamPos.y, this.oldCamPos.z);
+        this.isShaking--;
     }
+
 }
 
 window.onload = () => {

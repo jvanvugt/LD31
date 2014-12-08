@@ -18,15 +18,17 @@
     <IISExpressUseClassicPipelineMode />
   </PropertyGroup>
   <ItemGroup>
+    <Content Include="Scripts\dat.gui.min.js" />
+    <Content Include="Scripts\three.min.js" />
     <Content Include="style.css" />
     <Content Include="index.html" />
-    <Content Include="Scripts\three.js" />
     <Content Include="web.config" />
   </ItemGroup>
   <ItemGroup>
     <TypeScriptCompile Include="audio.ts" />
     <TypeScriptCompile Include="game.ts" />
     <TypeScriptCompile Include="input.ts" />
+    <TypeScriptCompile Include="Scripts\dat-gui.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\threejs\detector.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\threejs\three-canvasrenderer.d.ts" />
     <TypeScriptCompile Include="Scripts\typings\threejs\three-copyshader.d.ts" />
