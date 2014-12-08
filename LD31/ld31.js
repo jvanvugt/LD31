@@ -99,6 +99,7 @@ var Game = (function () {
     function Game(content) {
         var _this = this;
         this.treeOffset = 1000;
+        this.speed = 16;
         this.moveSpeed = 16;
         this.isShaking = -1;
         this.deerWidth = 60;
@@ -254,7 +255,7 @@ var Game = (function () {
             if (Utils.randomRange(0, 160) == 5) {
                 var newDeer = this.deerModel.clone();
                 if (Math.random() > 0.5)
-                    this.deerModel.rotateY(Math.PI);
+                    newDeer.rotateY(Math.PI);
                 newDeer.position.z = -5000;
                 newDeer.position.x = Utils.randomRange(-300, 275);
                 this.scene.add(newDeer);
@@ -290,6 +291,7 @@ var Game = (function () {
                 if ((deer.position.x - _this.deerWidth < _this.camera.position.x + _this.deerWidth && deer.position.x - _this.deerWidth > _this.camera.position.x - _this.deerWidth) || (deer.position.x + _this.deerWidth < _this.camera.position.x + _this.deerWidth && deer.position.x + _this.deerWidth > _this.camera.position.x - _this.deerWidth)) {
                     _this.deerHit++;
                     _this.audioPlayer.playSFX();
+                    _this.moveSpeed *= 1.1;
                     if (_this.isShaking > 0) {
                         _this.isShaking = 14;
                     } else
@@ -339,6 +341,8 @@ var Game = (function () {
         this.scene.add(this.carInterior);
         this.scene.add(this.light);
         this.createScene();
+        this.camera.position.set(this.oldCamPos.x, this.oldCamPos.y, this.oldCamPos.z);
+        this.moveSpeed = this.speed;
     };
 
     Game.prototype.createScene = function () {

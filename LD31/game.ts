@@ -12,6 +12,7 @@ class Game {
     trees: THREE.Mesh[];
     foliage: THREE.Mesh[];
     treeOffset: number = 1000;
+    speed = 16;
     moveSpeed: number = 16;
     input: Input;
     skyLine: THREE.Mesh;
@@ -190,7 +191,7 @@ class Game {
             if (Utils.randomRange(0, 160) == 5) {
                 var newDeer = this.deerModel.clone();
                 if(Math.random() > 0.5)
-                    this.deerModel.rotateY(Math.PI);
+                    newDeer.rotateY(Math.PI);
                 newDeer.position.z = -5000;
                 newDeer.position.x = Utils.randomRange(-300, 275);
                 this.scene.add(newDeer);
@@ -228,6 +229,7 @@ class Game {
                     (deer.position.x + this.deerWidth < this.camera.position.x + this.deerWidth && deer.position.x + this.deerWidth > this.camera.position.x - this.deerWidth)) {
                     this.deerHit++;
                     this.audioPlayer.playSFX();
+                    this.moveSpeed *= 1.1;
                     if (this.isShaking > 0) {
                         this.isShaking = 14;
                     }
@@ -278,6 +280,8 @@ class Game {
         this.scene.add(this.carInterior);
         this.scene.add(this.light);
         this.createScene();
+        this.camera.position.set(this.oldCamPos.x, this.oldCamPos.y, this.oldCamPos.z);
+        this.moveSpeed = this.speed;
     }
 
     createScene() {
