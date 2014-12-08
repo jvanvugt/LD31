@@ -341,7 +341,8 @@ var Game = (function () {
         this.scene.add(this.carInterior);
         this.scene.add(this.light);
         this.createScene();
-        this.camera.position.set(this.oldCamPos.x, this.oldCamPos.y, this.oldCamPos.z);
+        if (this.oldCamPos)
+            this.camera.position.set(this.oldCamPos.x, this.oldCamPos.y, this.oldCamPos.z);
         this.moveSpeed = this.speed;
     };
 
